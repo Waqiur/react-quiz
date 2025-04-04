@@ -1,6 +1,6 @@
 {
     "rewrites": [
-        { "source": "/(.*)", "destination": "/index.html" },
-        { "source": "/questions.json", "destination": "/data/questions.json" }
+        { "source": "/api/questions", "destination": "/data/questions.json" },
+        { "source": "/(.*)", "destination": "/index.html" }
     ]
 }
