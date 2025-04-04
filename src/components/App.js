@@ -26,7 +26,15 @@ const SECS_PER_QUESTION = 30;
 function reducer(state, action) {
     switch (action.type) {
         case "dataRecieved":
-            return { ...state, questions: action.payload, status: "ready" };
+            if (Array.isArray(action.payload.questions)) {
+                return {
+                    ...state,
+                    questions: action.payload.questions,
+                    status: "ready",
+                };
+            } else {
+                return { ...state, status: "error" }; // Handle unexpected data
+            }
         case "dataFailed":
             return { ...state, status: "error" };
         case "start":
@@ -88,14 +96,20 @@ export default function App() {
         dispatch,
     ] = useReducer(reducer, initialState);
     const numQuestions = questions.length;
-    const maxPossiblePoints = questions.reduce(
-        (prev, cur) => prev + cur.points,
-        0
-    );
+    const maxPossiblePoints = Array.isArray(questions)
+        ? questions.reduce((prev, cur) => prev + cur.points, 0)
+        : 0;
     useEffect(function () {
-        fetch("http://localhost:8000/questions")
+        const url =
+            process.env.NODE_ENV === "development"
+                ? "http://localhost:8000/questions"
+                : "/api/questions";
+
+        fetch(url)
             .then((res) => res.json())
-            .then((data) => dispatch({ type: "dataRecieved", payload: data }))
+            .then((data) => {
+                dispatch({ type: "dataRecieved", payload: data });
+            })
             .catch((err) => dispatch({ type: "dataFailed" }));
     }, []);
 
@@ -112,35 +126,36 @@ export default function App() {
                         dispatch={dispatch}
                     />
                 )}
-                {status === "active" && (
-                    <>
-                        <Progress
-                            index={index}
-                            numQuestions={numQuestions}
-                            points={points}
-                            maxPossiblePoints={maxPossiblePoints}
-                            answer={answer}
-                        />
-                        <Question
-                            question={questions[index]}
-                            dispatch={dispatch}
-                            answer={answer}
-                        />
-                        <Footer>
-                            <Timer
-                                dispatch={dispatch}
-                                secondsRemaining={secondsRemaining}
+                {status === "active" &&
+                    questions.length > 0 && ( // Ensure questions are available
+                        <>
+                            <Progress
+                                index={index}
+                                numQuestions={numQuestions}
+                                points={points}
+                                maxPossiblePoints={maxPossiblePoints}
+                                answer={answer}
                             />
-                            <NextButton />
-                        </Footer>
-                        <NextButton
-                            dispatch={dispatch}
-                            answer={answer}
-                            numQuestions={numQuestions}
-                            index={index}
-                        />
-                    </>
-                )}
+                            <Question
+                                question={questions[index]}
+                                dispatch={dispatch}
+                                answer={answer}
+                            />
+                            <Footer>
+                                <Timer
+                                    dispatch={dispatch}
+                                    secondsRemaining={secondsRemaining}
+                                />
+                                <NextButton />
+                            </Footer>
+                            <NextButton
+                                dispatch={dispatch}
+                                answer={answer}
+                                numQuestions={numQuestions}
+                                index={index}
+                            />
+                        </>
+                    )}
                 {status === "finished" && (
                     <FinishScreen
                         points={points}
