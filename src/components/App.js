@@ -33,7 +33,11 @@ function reducer(state, action) {
                     status: "ready",
                 };
             } else {
-                return { ...state, status: "error" }; // Handle unexpected data
+                return {
+                    ...state,
+                    questions: action.payload,
+                    status: "ready",
+                };
             }
         case "dataFailed":
             return { ...state, status: "error" };
@@ -104,7 +108,6 @@ export default function App() {
             process.env.NODE_ENV === "development"
                 ? "http://localhost:8000/questions"
                 : "/api/questions";
-
         fetch(url)
             .then((res) => res.json())
             .then((data) => {
